@@ -7,33 +7,38 @@
   <style>
     :root{ --blue:#1d4ed8; --lightblue:#dbeafe; --muted:#64748b; --bg:#f8fafc; --card:#fff; --border:#e5e7eb; }
     *{box-sizing:border-box}
-    body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;background:var(--bg);color:#0f172a;padding:12px}
-    h2{margin:0 0 10px;font-size:1.28rem;color:var(--blue);text-align:center}
+    body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;background:var(--bg);color:#0f172a;padding:0}
+    h2{margin:0 0 10px;font-size:1.28rem;color:var(--blue);text-align:center;padding:12px}
 
-    /* 공통 카드/레이아웃 (NE CRI와 통일) */
+    /* 공통 카드/레이아웃 */
     .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px;margin-bottom:10px;box-shadow:0 2px 6px rgba(0,0,0,.04)}
     .row{display:flex;gap:10px;flex-wrap:wrap;align-items:stretch}
-    .ibox{border:2px solid var(--blue);border-radius:10px;padding:8px;background:#f9fafb;min-width:160px;flex:1;display:flex;flex-direction:column;justify-content:flex-start;position:relative}
+    .ibox{border:2px solid var(--blue);border-radius:10px;padding:8px;background:#f9fafb;min-width:240px;flex:1;display:flex;flex-direction:column;justify-content:flex-start;position:relative}
     label{display:block;font-size:.86rem;color:var(--blue);margin-bottom:4px}
 
-    /* 입력 박스 (박스 크기 유지, 안의 글자만 크게) */
-    input[type=number]{width:100%;height:38px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:#fff;font-size:1.2rem;font-weight:700;text-align:center}
-    input[type=number]:focus{outline:none;border-color:var(--blue)}
+    /* 입력 박스 + 확인 버튼 (병렬, 보기좋게) */
+    .weight-box{display:flex;align-items:center;gap:0;width:100%;border:1px solid var(--border);border-radius:8px;overflow:hidden;height:38px;background:#fff}
+    .weight-input{flex:3;border:none;height:100%;font-size:1.2rem;font-weight:700;text-align:center;min-width:0}
+    .weight-input:focus{outline:none}
+    .weight-btn{flex:1;border:none;border-left:1px solid var(--border);height:100%;background:#f1f5f9;cursor:pointer;font-size:.9rem;white-space:nowrap;display:flex;align-items:center;justify-content:center}
+    .weight-btn:active{transform:translateY(1px)}
+
     .dose-input{width:80px;height:34px;padding:4px 6px;border:1px solid var(--border);border-radius:8px;background:#fff;font-size:1.15rem;font-weight:800;text-align:center;color:#0f172a}
 
-    /* 상단 컨트롤 */
+    /* 상단 컨트롤 고정 */
+    .topbar{position:sticky;top:0;z-index:10;background:var(--bg);padding:8px 12px;box-shadow:0 2px 4px rgba(0,0,0,0.06)}
     .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
     .btn{padding:8px 10px;border:1px solid var(--border);background:#fff;border-radius:10px;cursor:pointer;font-size:.95rem;position:relative}
     .btn small{display:block;font-size:0.7rem;color:var(--muted);margin-top:2px}
     .btn:active{transform:translateY(1px)}
 
-    /* 결과 리스트: 두 열 그리드로 정보 밀집 */
-    .drugs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+    /* 결과 리스트 */
+    .drugs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:12px}
     @media (max-width:520px){ .drugs{grid-template-columns:1fr} }
 
     .drug{border:1px solid var(--border);border-radius:10px;padding:6px 8px;background:#fff}
     .drug-header{display:flex;justify-content:space-between;align-items:center;gap:6px}
-    .name{font-weight:700}
+    .name{font-weight:700; cursor:pointer; user-select:none}
     .result{color:#1e3a8a;font-weight:800}
     .meta{font-size:.86rem;color:#374151}
     .bar{grid-column:1/-1;border-top:2px solid #d1d5db;margin:2px 0}
@@ -41,29 +46,34 @@
     .details{display:none;margin-top:4px;font-size:.85rem;color:#111}
     .details.show{display:block}
 
-    /* 접힘 상태일 때 수직 여백 최소화 */
+    /* Dose 줄바꿈 방지 */
+    .dose-row{display:flex;align-items:center;gap:6px;flex-wrap:nowrap}
+    .dose-label{color:#b91c1c;font-weight:700}
+    .dose-unit{white-space:nowrap}
+
     .collapsed .drug{padding:4px 6px}
   </style>
 </head>
 <body>
   <h2>⚡ 응급 약물 용량 계산기</h2>
 
-  <div class="card">
+  <div class="topbar">
     <div class="controls row">
-      <div class="ibox" style="max-width:220px">
+      <div class="ibox">
         <label for="weight">체중 (kg)</label>
-        <input type="number" id="weight" value="1" min="0.1" step="0.1" onchange="calc()" />
+        <div class="weight-box">
+          <input type="number" id="weight" class="weight-input" value="1" min="0.1" step="0.1" />
+          <button class="weight-btn" onclick="calc()">확인</button>
+        </div>
       </div>
       <button id="toggleDetails" class="btn" onclick="toggleDetails()" aria-pressed="false">
-        <span id="btnText">계산 열기</span>
+        <span id="btnText">전체계산열기</span>
         <small>dose 조절 가능</small>
       </button>
     </div>
   </div>
 
-  <div class="card">
-    <div id="results" class="drugs"></div>
-  </div>
+  <div id="results" class="drugs"></div>
 
   <script>
     const drugs = [
@@ -86,11 +96,11 @@
       {name:"Magnesium sulfate", conc:100, dose:null, unit:"mg", vol:"mL", rangeMin:37, rangeMax:75, route:"iv slow", displayUnit:"mg (from g)"},
       {name:"Dextrose 50%", conc:0.5, dose:0.5, unit:"g", vol:"mL", rangeMin:0.5, rangeMax:1, route:"iv diluted"},
       {bar:true},
-      {name:"Mannitol 20%", conc:200, dose:500, unit:"mg", vol:"g/mL", rangeMin:250, rangeMax:1000, route:"iv over 15–30min"},
+      {name:"Mannitol 20%", conc:0.2, dose:0.5, unit:"g", vol:"mL", rangeMin:0.25, rangeMax:1.0, route:"iv over 15–30min"},
       {name:"Hetastarch", conc:null, dose:15, unit:"mL", vol:"mL", rangeMin:10, rangeMax:20, route:"iv slow"}
     ];
 
-    let expanded = false; // 기본: 접힘
+    let expanded = false;
 
     function setCollapsedClass(){
       document.body.classList.toggle('collapsed', !expanded);
@@ -99,7 +109,7 @@
     function toggleDetails(){
       expanded = !expanded;
       const btnText = document.getElementById('btnText');
-      btnText.textContent = expanded ? '계산 닫기' : '계산 열기';
+      btnText.textContent = expanded ? '전체계산닫기' : '전체계산열기';
       const btn = document.getElementById('toggleDetails');
       btn.setAttribute('aria-pressed', expanded);
       setCollapsedClass();
@@ -126,9 +136,9 @@
       const detailsCls = expanded ? 'details show' : 'details';
 
       return `
-        <div class="drug">
+        <div class="drug" data-index="${i}">
           <div class="drug-header">
-            <div class="name">💉 ${d.name}</div>
+            <div class="name" data-role="toggle-details">💉 ${d.name}</div>
             <div class="result">${volume} ${d.vol}</div>
           </div>
           <div class="${detailsCls}">
@@ -137,9 +147,10 @@
               · <span class='range'>${d.rangeMin}–${d.rangeMax} ${d.unit}/kg</span>
               · <span class='route' style="font-style:italic; text-transform:lowercase; color:#6b7280">${d.route}</span>
             </div>
-            <div style="margin-top:4px">
-              <span class="dose-label" style="color:#b91c1c;font-weight:700">Dose</span>
-              <input type='number' class='dose-input' id='${doseInputId}' value='${d.dose}' min='${d.rangeMin}' max='${d.rangeMax}' step='${step}' onchange='calc()'> ${d.unit}/kg
+            <div class="dose-row" style="margin-top:4px">
+              <span class="dose-label">Dose</span>
+              <input type='number' class='dose-input' id='${doseInputId}' value='${d.dose}' min='${d.rangeMin}' max='${d.rangeMax}' step='${step}' onchange='calc()'>
+              <span class="dose-unit">${d.unit}/kg</span>
             </div>
           </div>
         </div>`;
@@ -149,10 +160,19 @@
       const w = parseFloat(document.getElementById('weight').value);
       let html = '';
       drugs.forEach((d,i)=>{ html += drugCardHTML(d,i,w); });
-      document.getElementById('results').innerHTML = html;
+      const container = document.getElementById('results');
+      container.innerHTML = html;
+
+      // 이름 클릭으로 해당 카드의 details 토글 (이벤트 위임)
+      container.onclick = (e)=>{
+        const target = e.target.closest('[data-role="toggle-details"]');
+        if(!target) return;
+        const drugEl = target.closest('.drug');
+        const details = drugEl.querySelector('.details');
+        if(details){ details.classList.toggle('show'); }
+      };
     }
 
-    // 초기 상태 반영
     setCollapsedClass();
     calc();
   </script>
