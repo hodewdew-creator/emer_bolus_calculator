@@ -102,7 +102,7 @@
 
     let expanded = false;           // 전체 펼침/접힘
     let openMap = {};               // 카드별 열림 상태 저장
-    let doseMap = {};               // 카드별 현재 dose 값 저장 (Enter로 확정)
+    let doseMap = {};               // 카드별 현재 dose 값 저장
 
     function setCollapsedClass(){
       document.body.classList.toggle('collapsed', !expanded);
@@ -110,6 +110,7 @@
 
     function toggleDetails(){
       expanded = !expanded;
+      if(!expanded){ openMap = {}; }
       const btnText = document.getElementById('btnText');
       btnText.textContent = expanded ? '전체계산닫기' : '전체계산열기';
       const btn = document.getElementById('toggleDetails');
@@ -119,7 +120,6 @@
     }
 
     function captureState(){
-      // 현재 DOM에서 열림 상태와 입력값을 임시 저장 (확정은 Enter)
       const cards = document.querySelectorAll('.drug');
       cards.forEach((card)=>{
         const idx = parseInt(card.getAttribute('data-index'), 10);
@@ -131,18 +131,25 @@
       });
     }
 
-    function doseKeydown(ev, i){
-      if(ev.key === 'Enter'){
-        ev.preventDefault();
-        const el = document.getElementById(`dose-${i}`);
-        if(el){
-          const num = parseFloat(el.value);
-          if(!isNaN(num)) doseMap[i] = num; else delete doseMap[i];
+    function updateDose(i, val){
+      const num = parseFloat(val);
+      if(!isNaN(num)) doseMap[i] = num; else delete doseMap[i];
+      openMap[i] = true;
+      // 전체 재렌더 대신 현재 카드만 갱신
+      const card = document.querySelector(`.drug[data-index="${i}"]`);
+      if(card){
+        const resEl = card.querySelector('.result');
+        const d = drugs[i];
+        const w = parseFloat(document.getElementById('weight').value);
+        let volume = '-';
+        if(!isNaN(num)){
+          if(d.name === 'Hetastarch'){
+            volume = (num * w).toFixed(2);
+          } else if(d.conc){
+            volume = ((num * w) / d.conc).toFixed(2);
+          }
         }
-        openMap[i] = true; // 엔터로 확정 시 접히지 않게 유지
-        calc();
-        const el2 = document.getElementById(`dose-${i}`);
-        if(el2){ el2.focus(); el2.select?.(); }
+        if(resEl) resEl.textContent = `${volume} ${d.vol}`;
       }
     }
 
@@ -180,9 +187,8 @@
             <div class="dose-row" style="margin-top:4px">
               <span class="dose-label">Dose</span>
               <input type='number' class='dose-input' id='${doseInputId}' value='${isNaN(chosenDose)?"":chosenDose}' min='${d.rangeMin}' max='${d.rangeMax}' step='${step}'
-                     onpointerdown='if(!this.dataset.userCleared){ this.select(); this.value=""; this.dataset.userCleared=1; }'
                      onfocus='openMap[${i}]=true; this.select();'
-                     onkeydown='doseKeydown(event, ${i})'>
+                     oninput='updateDose(${i}, this.value)'>
               <span class="dose-unit">${d.unit}/kg</span>
             </div>
           </div>
